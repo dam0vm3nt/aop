@@ -17,9 +17,9 @@ class Sample extends Object with AopWrappers {
     return b + x;
   });});}
 
-  methodVarRet(x, b, z) { return $aop$(new InvokationContext('logger','methodVarRet',[x,b,z],{}),() {
+  methodVarRet(x, b, z) { return $aop$(new InvokationContext('logger','methodVarRet',[x,b,z],{}),() { return $aop$(new InvokationContext('MySampleAspect.executeAround','methodVarRet',[x,b,z],{}),() {
     return x + b - z;
-  });}
+  });});}
 
-  methodExpr(a,b) => $aop$(new InvokationContext('logger','methodExpr',[a,b],{}),() => a-b);
+  methodExpr(a,b) => $aop$(new InvokationContext('logger','methodExpr',[a,b],{}),() => $aop$(new InvokationContext('MySampleAspect.executeAround','methodExpr',[a,b],{}),() => a-b));
 }

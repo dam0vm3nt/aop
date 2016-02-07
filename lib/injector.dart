@@ -43,17 +43,23 @@ class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
   }
 
   bool visitInstanceCreationExpression(InstanceCreationExpression expr) {
-    if (!expr.isConst)
-      throw "${expr} is not a constant expression";
+    if (!expr.isConst) throw "${expr} is not a constant expression";
 
     String name = expr.constructorName.toString();
 
     print("Looking for a evaluator for ${name}");
 
     Function e = {
-      "NameMatcher" : () => evaluateRegExp(expr.argumentList.arguments.first),
-      "AnnotationMatcher": () => matchAnnnotation(expr.argumentList.arguments.first),
-      "AndMatcher": () => matchAnd(asList(expr.argumentList.arguments.first))
+      (NameMatches).toString(): () =>
+          evaluateRegExp(expr.argumentList.arguments.first),
+      (AnnotationMatches).toString(): () =>
+          matchAnnnotation(expr.argumentList.arguments.first),
+      (And).toString(): () =>
+          matchAnd(asList(expr.argumentList.arguments.first)),
+      (Or).toString(): () =>
+          matchOr(asList(expr.argumentList.arguments.first)),
+      (Not).toString(): () =>
+          matchNot(expr.argumentList.arguments.first)
     }[name];
 
     if (e != null) {
@@ -67,8 +73,16 @@ class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
 
   asList(ListLiteral lit) => lit.elements;
 
+  bool matchNot(Expression expr) => !expr.accept(new ExpressionMatcherVisitor(mdecl));
+
   bool matchAnd(NodeList args) {
-    return args.every((AstNode n) => n.accept(new ExpressionMatcherVisitor(mdecl)));
+    return args
+        .every((AstNode n) => n.accept(new ExpressionMatcherVisitor(mdecl)));
+  }
+
+  bool matchOr(NodeList args) {
+    return args
+        .any((AstNode n) => n.accept(new ExpressionMatcherVisitor(mdecl)));
   }
 
   bool matchAnnnotation(Expression expr) {
@@ -76,7 +90,7 @@ class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
       String val = expr.stringValue;
       print("Eval ExPR : ${val}");
       RegExp re = new RegExp(val);
-      return mdecl.metadata.any((Annotation a) => re.hasMatch(a.name.name)) ;
+      return mdecl.metadata.any((Annotation a) => re.hasMatch(a.name.name));
     }
     return false;
   }
@@ -89,7 +103,6 @@ class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
     }
     return false;
   }
-
 }
 
 class ExpressionMethodMatcher implements MethodMatcher {
@@ -100,8 +113,6 @@ class ExpressionMethodMatcher implements MethodMatcher {
   bool matches(MethodDeclaration declaration) {
     return expression.accept(new ExpressionMatcherVisitor(declaration));
   }
-
-
 }
 
 abstract class PointcutInterceptor implements AstVisitor {
@@ -123,7 +134,6 @@ class MethodBodyInjector extends RecursiveAstVisitor {
       edit.edit(node.offset, node.offset,
           "{ ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
     } else {
-
       edit.edit(node.end, node.end, ");}");
       edit.edit(node.offset, node.offset,
           "{ return ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
@@ -134,10 +144,9 @@ class MethodBodyInjector extends RecursiveAstVisitor {
     logger.fine(
         "Body : \n${node.toSource()}, returns : ${decl.returnType?.name}");
 
-      edit.edit(node.semicolon.offset, node.semicolon.offset, ")");
-      edit.edit(node.offset, node.offset,
-          "=> ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
-
+    edit.edit(node.semicolon.offset, node.semicolon.offset, ")");
+    edit.edit(node.offset, node.offset,
+        "=> ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
   }
 }
 
@@ -203,7 +212,6 @@ class MethodInterceptorPointcut extends PointcutInterceptor
     return sb.toString();
   }
 }
-
 
 typedef PointcutHandler(InvokationContext ctx, Function proceed);
 

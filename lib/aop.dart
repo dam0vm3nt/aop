@@ -1,25 +1,37 @@
 library aop;
 
-class Matcher {
-  const Matcher();
+class MatchExpression {
+  const MatchExpression();
 }
 
-class NameMatcher extends Matcher {
+class NameMatches extends MatchExpression {
+  final String pattern;
+
+  const NameMatches(this.pattern);
+
+}
+
+class AnnotationMatches extends MatchExpression {
   final Pattern pattern;
-
-  const NameMatcher(this.pattern);
-
+  const AnnotationMatches(this.pattern);
 }
 
-class AnnotationMatcher extends Matcher {
-  final Pattern pattern;
-  const AnnotationMatcher(this.pattern);
+class And extends MatchExpression {
+  final List<MatchExpression> matchers;
+
+  const And(this.matchers);
 }
 
-class AndMatcher extends Matcher {
-  final List<Matcher> matchers;
+class Or extends MatchExpression {
+  final List<MatchExpression> matchers;
 
-  const AndMatcher(this.matchers);
+  const Or(this.matchers);
+}
+
+class Not extends MatchExpression {
+  final MatchExpression expression;
+
+  const Not(this.expression);
 }
 
 

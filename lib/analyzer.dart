@@ -107,8 +107,7 @@ class AnalyzerResult {
 class Analyzer {
 
   AnalyzerResult analyze(String contents, String url)  {
-    CompilationUnit unit = parseCompilationUnit(contents);
-    SourceFile source = new SourceFile(contents, url: url);
+    CompilationUnit unit = parseCompilationUnit(contents,parseFunctionBodies: false);
 
     List<PointcutDeclaration> pointcutDeclarations = [];
     unit.accept(new AspectCollector(pointcutDeclarations));
