@@ -4,6 +4,7 @@ import "dart:async";
 
 import "package:analyzer/analyzer.dart";
 import "package:aop/aop.dart";
+import "package:aop/src/pointcut_registry.dart";
 import "package:logging/logging.dart";
 import "package:source_maps/source_maps.dart";
 import "package:source_span/source_span.dart";
@@ -253,7 +254,7 @@ class Injector {
 
     if (isEntryPoint) {
       edit.edit(pos,pos,
-          "\nimport 'package:aop_demo/aop_initializer.dart';");
+          "\nimport 'aop_initializer.dart';");
     }
 
     if (edit.hasEdits) {

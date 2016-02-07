@@ -29,7 +29,7 @@ class PointcutDeclaration {
   void buildPointcutRegister(StringBuffer buffer,String prefix) {
     buffer.write(" pointcutRegistry.register('");
     buffer.write(pointcutId);
-    buffer.write("',(context,proceed) => aopContext.aspect(${prefix}.${cdecl.name}).${mdecl.name}(context,proceed) );\n");
+    buffer.write("',(context,proceed) => aspectRegistry.aspect(${prefix}.${cdecl.name}).${mdecl.name}(context,proceed) );\n");
   }
 
   void buildDefaultAopRegistry(StringBuffer buffer,String prefix) {
@@ -128,6 +128,7 @@ class Analyzer {
 
     buffer.write(
         "import 'package:initialize/initialize.dart';\n"
+        "import 'package:aop/src/pointcut_registry.dart';\n"
         "import 'package:aop/aop.dart';\n");
     Map<String,String>  prefixes={};
 

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elys</title>
+
+       <!--
+      Necessario perchè il renderer degli hints viene aggiunto al body
+      e se non lo importiamo qua non vede gli stili e non si vedono  gli hints.
+      -->
+
+      <script src="packages/web_components/webcomponents-lite.min.js"></script>
+
+    <style include="elys-style"></style>
+
+    <style is="custom-style">
+      .default_theme {
+        --elys-theme: {
+          --default-primary-color: #2c7bb2;
+          --dark-primary-color: #1f587e;
+          --light-primary-color: #3196dc;
+          --text-primary-color: white;
+          --text-secondary-color: black;
+          --accent-color: red;
+        };
+      }
+    </style>
+
+</head>
+  <body class="fullbleed" >
+
+   <ciao-ciao></ciao-ciao>
+
+    <!-- bootstrap ELYS -->
+    <script type="application/dart" src="index.dart"></script>
+    <script src="packages/browser/dart.js"></script>
+
+  </body>
+</html>

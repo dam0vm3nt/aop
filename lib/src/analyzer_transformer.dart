@@ -33,7 +33,7 @@ class AopAnalyzerTransformer extends AggregateTransformer {
     }
     analyzerResult = analyzer.end();
 
-    AssetId initId = new AssetId(transform.package,"lib/aop_initializer.dart");
+    AssetId initId = new AssetId(transform.package,"web/aop_initializer.dart");
     print("WRITE aopInitializer for: ${transform.package} : ${initId}");
     transform.addOutput(new Asset.fromString(initId,analyzerResult.initializer));
 
