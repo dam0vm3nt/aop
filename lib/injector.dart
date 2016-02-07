@@ -3,12 +3,18 @@ library aop.injector;
 import "dart:async";
 
 import "package:analyzer/analyzer.dart";
-import "package:source_span/source_span.dart";
-import "package:source_maps/source_maps.dart";
+import "package:aop/aop.dart";
 import "package:logging/logging.dart";
-import "dart:convert";
+import "package:source_maps/source_maps.dart";
+import "package:source_span/source_span.dart";
 
-Logger logger = new Logger("aop");
+Logger logger = new Logger("aop.injector");
+
+/**
+ * TODO:
+ * getters and setters / properties
+ * async / async* ecc.
+ */
 
 abstract class MethodMatcher {
   bool matches(MethodDeclaration declaration);
@@ -43,11 +49,21 @@ class MethodBodyInjector extends RecursiveAstVisitor {
       edit.edit(node.offset, node.offset,
           "{ ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
     } else {
+
       edit.edit(node.end, node.end, ");}");
       edit.edit(node.offset, node.offset,
           "{ return ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
     }
-    //TextEditTransaction edit = new TextEditTransaction(node.to)
+  }
+
+  visitExpressionFunctionBody(ExpressionFunctionBody node) {
+    logger.fine(
+        "Body : \n${node.toSource()}, returns : ${decl.returnType?.name}");
+
+      edit.edit(node.semicolon.offset, node.semicolon.offset, ")");
+      edit.edit(node.offset, node.offset,
+          "=> ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
+
   }
 }
 
@@ -114,16 +130,6 @@ class MethodInterceptorPointcut extends PointcutInterceptor
   }
 }
 
-class InvokationContext {
-  String pointcutId;
-  String methodName;
-  List positionalParameters;
-  Map<String, dynamic> namedParameters;
-  InvokationContext(this.pointcutId, this.methodName, this.positionalParameters,
-      this.namedParameters);
-
-  String toString() => "PoincutID:$pointcutId, Method:${methodName}";
-}
 
 typedef PointcutHandler(InvokationContext ctx, Function proceed);
 

@@ -10,4 +10,6 @@ class Sample {
   methodVarRet(x, b, z) {
     return x + b - z;
   }
+
+  methodExpr(a,b) => a-b;
 }
