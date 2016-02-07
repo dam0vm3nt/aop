@@ -14,6 +14,7 @@ class PointcutDeclaration {
   ClassDeclaration cdecl;
   MethodDeclaration mdecl;
   Annotation pointcutDefAnnotation;
+  String url;
 
   PointcutInterceptor createInterceptor() =>
       new MethodInterceptorPointcut()
@@ -23,16 +24,16 @@ class PointcutDeclaration {
 
   String get pointcutId => "${cdecl.name}.${mdecl.name}";
 
-  PointcutDeclaration({this.cdecl, this.mdecl, this.pointcutDefAnnotation});
+  PointcutDeclaration({this.url,this.cdecl, this.mdecl, this.pointcutDefAnnotation});
 
-  void buildPointcutRegister(StringBuffer buffer) {
-    buffer.write("pointcutRegistry.register('");
+  void buildPointcutRegister(StringBuffer buffer,String prefix) {
+    buffer.write(" pointcutRegistry.register('");
     buffer.write(pointcutId);
-    buffer.write("',(context,proceed) => aopContext.aspect(${cdecl.name}).${mdecl.name}(context,proceed) );\n");
+    buffer.write("',(context,proceed) => aopContext.aspect(${prefix}.${cdecl.name}).${mdecl.name}(context,proceed) );\n");
   }
 
-  void buildDefaultAopRegistry(StringBuffer buffer) {
-    buffer.write("aopContext.registerAspect(${cdecl.name},() => new ${cdecl.name}());\n");
+  void buildDefaultAopRegistry(StringBuffer buffer,String prefix) {
+    buffer.write(" aspectRegistry.registerAspect(${prefix}.${cdecl.name},() => new ${prefix}.${cdecl.name}());\n");
   }
 
 
@@ -43,16 +44,18 @@ class PointcutCollector extends RecursiveAstVisitor {
 
   ClassDeclaration cdecl;
   List<PointcutDeclaration> poincutDeclarations;
+  String url;
 
-  PointcutCollector(this.cdecl, this.poincutDeclarations);
+  PointcutCollector(this.url,this.cdecl, this.poincutDeclarations);
 
   visitMethodDeclaration(MethodDeclaration mdecl) {
     Iterable<Annotation> pointcutDefs = mdecl.metadata.where((
         Annotation anno) => anno.name.name == "Pointcut");
     pointcutDefs.forEach((Annotation pointcutDefAnnotation) {
-      print("FOUND pointcut : ${mdecl.name.name} , ${pointcutDefAnnotation
+      logger.fine("FOUND pointcut : ${mdecl.name.name} , ${pointcutDefAnnotation
           .arguments.arguments[0]}");
       poincutDeclarations.add(new PointcutDeclaration(
+          url:url,
           pointcutDefAnnotation: pointcutDefAnnotation,
           cdecl: cdecl,
           mdecl: mdecl
@@ -64,14 +67,15 @@ class PointcutCollector extends RecursiveAstVisitor {
 class AspectCollector extends RecursiveAstVisitor {
 
   List<PointcutDeclaration> poincutDeclarations;
+  String url;
 
-  AspectCollector(this.poincutDeclarations);
+  AspectCollector(this.poincutDeclarations,this.url);
 
   visitClassDeclaration(ClassDeclaration cdecl) {
     if (cdecl.metadata.any((Annotation anno) => anno.name.name == "aspect")) {
-      print("FOUND ASPECT : ${cdecl.name.name}");
+      logger.fine("FOUND ASPECT : ${cdecl.name.name} in ${url}");
 
-      cdecl.accept(new PointcutCollector(cdecl, poincutDeclarations));
+      cdecl.accept(new PointcutCollector(url,cdecl, poincutDeclarations));
     }
   }
 
@@ -105,26 +109,47 @@ class AnalyzerResult {
 }
 
 class Analyzer {
+  List<PointcutDeclaration> pointcutDeclarations;
 
-  AnalyzerResult analyze(String contents, String url)  {
+
+  void start() {
+    pointcutDeclarations = [];
+  }
+
+  void analyze(String contents, String url)  {
     CompilationUnit unit = parseCompilationUnit(contents,parseFunctionBodies: false);
 
-    List<PointcutDeclaration> pointcutDeclarations = [];
-    unit.accept(new AspectCollector(pointcutDeclarations));
+    unit.accept(new AspectCollector(pointcutDeclarations,url));
+  }
 
-
+  AnalyzerResult end() {
     StringBuffer buffer = new StringBuffer();
 
-    buffer.write("@initializer\n"
-        "class MyAopInitializer {\n"
-        " void execute() {\n");
-    pointcutDeclarations.forEach((PointcutDeclaration pdecl) {
-      pdecl.buildPointcutRegister(buffer);
-      pdecl.buildDefaultAopRegistry(buffer);
+
+    buffer.write(
+        "import 'package:initialize/initialize.dart';\n"
+        "import 'package:aop/aop.dart';\n");
+    Map<String,String>  prefixes={};
+
+    pointcutDeclarations.forEach((PointcutDeclaration pd) {
+      prefixes.putIfAbsent(pd.url,() {
+        String prefix = "pd${prefixes.length}";
+        buffer.write("import '${pd.url}' as ${prefix};\n");
+        return prefix;
+      });
+
     });
 
-    buffer.write("}\n"
-        "}\n");
+
+    buffer.write(
+        "@initMethod\n"
+        "init_aop() {\n");
+    pointcutDeclarations.forEach((PointcutDeclaration pdecl) {
+      pdecl.buildPointcutRegister(buffer,prefixes[pdecl.url]);
+      pdecl.buildDefaultAopRegistry(buffer,prefixes[pdecl.url]);
+    });
+
+    buffer.write("}\n");
 
 
     return new AnalyzerResult(pointcutDeclarations,buffer.toString());

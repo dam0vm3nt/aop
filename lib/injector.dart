@@ -28,7 +28,9 @@ class SimpleMethodMatcher implements MethodMatcher {
   SimpleMethodMatcher({this.name});
 
   bool matches(MethodDeclaration declaration) {
-    return name.allMatches(declaration.name.toString()).isNotEmpty;
+    return name
+        .allMatches(declaration.name.toString())
+        .isNotEmpty;
   }
 }
 
@@ -38,7 +40,7 @@ class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
   ExpressionMatcherVisitor(this.mdecl);
 
   bool visitNode(AstNode node) {
-    print("VISITING ${node.runtimeType}");
+    logger.fine("VISITING ${node.runtimeType}");
     return super.visitNode(node);
   }
 
@@ -47,7 +49,7 @@ class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
 
     String name = expr.constructorName.toString();
 
-    print("Looking for a evaluator for ${name}");
+    logger.fine("Looking for a evaluator for ${name}");
 
     Function e = {
       (NameMatches).toString(): () =>
@@ -66,14 +68,15 @@ class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
       return e();
     }
 
-    print("Don't know how to evaluate ${name}");
+    logger.fine("Don't know how to evaluate ${name}");
 
     return false;
   }
 
   asList(ListLiteral lit) => lit.elements;
 
-  bool matchNot(Expression expr) => !expr.accept(new ExpressionMatcherVisitor(mdecl));
+  bool matchNot(Expression expr) =>
+      !expr.accept(new ExpressionMatcherVisitor(mdecl));
 
   bool matchAnd(NodeList args) {
     return args
@@ -88,7 +91,7 @@ class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
   bool matchAnnnotation(Expression expr) {
     if (expr is StringLiteral) {
       String val = expr.stringValue;
-      print("Eval ExPR : ${val}");
+      logger.fine("Eval ExPR : ${val}");
       RegExp re = new RegExp(val);
       return mdecl.metadata.any((Annotation a) => re.hasMatch(a.name.name));
     }
@@ -98,7 +101,7 @@ class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
   bool evaluateRegExp(Expression expr) {
     if (expr is StringLiteral) {
       String val = expr.stringValue;
-      print("Eval ExPR : ${val}");
+      logger.fine("Eval ExPR : ${val}");
       return new RegExp(val).hasMatch(mdecl.name.name);
     }
     return false;
@@ -132,11 +135,13 @@ class MethodBodyInjector extends RecursiveAstVisitor {
     if (decl.returnType?.name?.name == "void") {
       edit.edit(node.end, node.end, ");}");
       edit.edit(node.offset, node.offset,
-          "{ ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
+          "{ ${AopWrappers
+              .AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
     } else {
       edit.edit(node.end, node.end, ");}");
       edit.edit(node.offset, node.offset,
-          "{ return ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
+          "{ return ${AopWrappers
+              .AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
     }
   }
 
@@ -146,7 +151,8 @@ class MethodBodyInjector extends RecursiveAstVisitor {
 
     edit.edit(node.semicolon.offset, node.semicolon.offset, ")");
     edit.edit(node.offset, node.offset,
-        "=> ${AopWrappers.AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
+        "=> ${AopWrappers
+            .AOP_WRAPPER_METHOD_NAME}($newInvokationContextText,() ");
   }
 }
 
@@ -163,6 +169,7 @@ class AopMixinInjector extends RecursiveAstVisitor {
     });
 
     if (edit.hasEdits) {
+
       edit.edit(classDecl.name.end, classDecl.name.end,
           " extends Object with AopWrappers");
     }
@@ -183,14 +190,14 @@ class MethodInterceptorPointcut extends PointcutInterceptor
     if (matcher.matches(node)) {
       // Recurr on body and inject callbacks to Aop
       String newInvokationContextText =
-          _createInvokationContextInitializerCode(node);
+      _createInvokationContextInitializerCode(node);
       node.accept(new MethodBodyInjector(newInvokationContextText, node, edit));
     }
   }
 
   String _createInvokationContextInitializerCode(MethodDeclaration node) {
     StringBuffer sb =
-        new StringBuffer("new InvokationContext('$id','${node.name}',[");
+    new StringBuffer("new InvokationContext('$id','${node.name}',[");
     String sep = "";
     node.parameters.parameters
         .where((FormalParameter fp) => fp.kind != ParameterKind.NAMED)
@@ -213,35 +220,9 @@ class MethodInterceptorPointcut extends PointcutInterceptor
   }
 }
 
-typedef PointcutHandler(InvokationContext ctx, Function proceed);
-
-class PointcutRegistry {
-  Map<String, PointcutHandler> _handlersById = {};
-
-  executePointcuts(InvokationContext ctx, Function closure) {
-    // TODO : replace with a list of pointcutsID
-
-    PointcutHandler handler = _handlersById[ctx.pointcutId];
-    if (handler == null) {
-      logger.warning("Pointcut ${ctx.pointcutId}, NOT REGISTERED!!!");
-      return closure();
-    }
-
-    return handler(ctx, closure);
-  }
-
-  void register(String pointcutId, PointcutHandler handler) {
-    _handlersById[pointcutId] = handler;
-  }
-
-  PointcutRegistry._();
-}
-
-// Singleton
-final PointcutRegistry pointcutRegistry = new PointcutRegistry._();
-
 class AopWrappers {
   static const String AOP_WRAPPER_METHOD_NAME = r"$aop$";
+
   $aop$(InvokationContext context, Function f) {
     return pointcutRegistry.executePointcuts(context, f);
   }
@@ -253,12 +234,27 @@ class Injector {
   /**
    * Take a file, analyze it, check the pointcuts and then inject the behavior.
    */
-  Future<String> inject(String contents, String url) async {
+  Future<String> inject(String contents, String url, bool isEntryPoint) async {
     CompilationUnit unit = parseCompilationUnit(contents);
     SourceFile source = new SourceFile(contents, url: url);
     TextEditTransaction edit = new TextEditTransaction(contents, source);
 
     unit.accept(new AopMixinInjector(interceptors, edit));
+
+    LibraryDirective lib = unit.directives.firstWhere((Directive d) => d is LibraryDirective,orElse: () => null);
+    int pos =0;
+    if (lib!=null) {
+      pos = lib.end;
+    }
+
+    if (edit.hasEdits) {
+      edit.edit(pos,pos,"\nimport 'package:aop/injector.dart' show AopWrappers;\n");
+    }
+
+    if (isEntryPoint) {
+      edit.edit(pos,pos,
+          "\nimport 'package:aop_demo/aop_initializer.dart';");
+    }
 
     if (edit.hasEdits) {
       NestedPrinter p = edit.commit();

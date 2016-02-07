@@ -1,0 +1,26 @@
+name: aop_demo
+author: vittorio ballestra <vittorio.ballestra@gmail.com>
+description: aop framework for dart - aka, the final transformer
+homepage: http://www.somewhere.yettobedecided.com
+version: 0.0.1
+dependencies:
+  polymer: "^1.0.0-rc.15"
+  initialize: any
+  aop:
+    path: ..
+
+transformers:
+ - aop
+# - initialize:
+#    entry_points: web/index.dart
+ - polymer:
+    entry_points: web/index.html
+
+ -
+    $dart2js:
+      $include: "**/*.bootstrap.initialize.dart"
+      commandLineOptions:
+        - "--enable-experimental-mirrors"
+        - "--trust-type-annotations"
+        - "--trust-primitives"
+      minify: false

@@ -12,8 +12,8 @@ part "sample_translated.dart";
 
 class MyAopInitializer {
   void execute() {
-    pointcutRegistry.register('MySampleAspect.executeAround',(context,proceed) => aopContext.aspect(MySampleAspect).executeAround(context,proceed) );
-    aopContext.registerAspect(MySampleAspect,() => new MySampleAspect());
+    pointcutRegistry.register('MySampleAspect.executeAround',(context,proceed) => aspectRegistry.aspect(MySampleAspect).executeAround(context,proceed) );
+    aspectRegistry.registerAspect(MySampleAspect,() => new MySampleAspect());
   }
 }
 
@@ -56,8 +56,10 @@ void main() {
       res.Resource x = new res.Resource(u.toString());
 
       String content = await x.readAsString();
+      analyzer.start();
+      analyzer.analyze(content,u.toString());
 
-      AnalyzerResult newContent = analyzer.analyze(content, u.toString());
+      AnalyzerResult newContent = analyzer.end();
       print("factory:\n${newContent.initializer}");
 
       newContent.pointcutDeclarations[0].createInterceptor();
@@ -74,7 +76,10 @@ void main() {
 
       String content = await x.readAsString();
 
-      AnalyzerResult newContent = analyzer.analyze(content, u.toString());
+      analyzer.start();
+      analyzer.analyze(content,u.toString());
+
+      AnalyzerResult newContent = analyzer.end();
       print("factory:\n${newContent.initializer}");
 
 
@@ -95,7 +100,7 @@ void main() {
 
       String content = await x.readAsString();
 
-      String newContent = await injector.inject(content, u.toString());
+      String newContent = await injector.inject(content, u.toString(),true);
       print("TRANSORMED:\n${newContent}");
     });
   });
