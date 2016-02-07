@@ -18,8 +18,7 @@ class PointcutDeclaration {
   PointcutInterceptor createInterceptor() =>
       new MethodInterceptorPointcut()
         ..id = pointcutId
-        ..matcher = new SimpleMethodMatcher(name: new RegExp(
-            pointcutDefAnnotation.arguments.arguments.first.toString()));
+        ..matcher = new ExpressionMethodMatcher(pointcutDefAnnotation.arguments.arguments.first);
 
 
   String get pointcutId => "${cdecl.name}.${mdecl.name}";
@@ -98,9 +97,16 @@ class AspectCollector extends RecursiveAstVisitor {
  * Durante l'esecuzione dei metodi alterati viene eseguito il pointcut sull'istanza selezionata.
  */
 
+class AnalyzerResult {
+  List<PointcutDeclaration> pointcutDeclarations;
+  String initializer;
+
+  AnalyzerResult(this.pointcutDeclarations,this.initializer);
+}
+
 class Analyzer {
 
-  Future<String> analyze(String contents, String url) async {
+  AnalyzerResult analyze(String contents, String url)  {
     CompilationUnit unit = parseCompilationUnit(contents);
     SourceFile source = new SourceFile(contents, url: url);
 
@@ -122,7 +128,7 @@ class Analyzer {
         "}\n");
 
 
-    return buffer.toString();
+    return new AnalyzerResult(pointcutDeclarations,buffer.toString());
   }
 
 }

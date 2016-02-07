@@ -1,7 +1,31 @@
 library aop;
 
+class Matcher {
+  const Matcher();
+}
+
+class NameMatcher extends Matcher {
+  final Pattern pattern;
+
+  const NameMatcher(this.pattern);
+
+}
+
+class AnnotationMatcher extends Matcher {
+  final Pattern pattern;
+  const AnnotationMatcher(this.pattern);
+}
+
+class AndMatcher extends Matcher {
+  final List<Matcher> matchers;
+
+  const AndMatcher(this.matchers);
+}
+
+
+
 class Pointcut {
-  final String expression;
+  final dynamic expression;
 
   const Pointcut(this.expression);
 }

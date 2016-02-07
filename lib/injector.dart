@@ -14,6 +14,8 @@ Logger logger = new Logger("aop.injector");
  * TODO:
  * getters and setters / properties
  * async / async* ecc.
+ * better mixin injection
+ * better class absolute reference  (with package , with library, ecc.)
  */
 
 abstract class MethodMatcher {
@@ -28,6 +30,78 @@ class SimpleMethodMatcher implements MethodMatcher {
   bool matches(MethodDeclaration declaration) {
     return name.allMatches(declaration.name.toString()).isNotEmpty;
   }
+}
+
+class ExpressionMatcherVisitor extends GeneralizingAstVisitor<bool> {
+  MethodDeclaration mdecl;
+
+  ExpressionMatcherVisitor(this.mdecl);
+
+  bool visitNode(AstNode node) {
+    print("VISITING ${node.runtimeType}");
+    return super.visitNode(node);
+  }
+
+  bool visitInstanceCreationExpression(InstanceCreationExpression expr) {
+    if (!expr.isConst)
+      throw "${expr} is not a constant expression";
+
+    String name = expr.constructorName.toString();
+
+    print("Looking for a evaluator for ${name}");
+
+    Function e = {
+      "NameMatcher" : () => evaluateRegExp(expr.argumentList.arguments.first),
+      "AnnotationMatcher": () => matchAnnnotation(expr.argumentList.arguments.first),
+      "AndMatcher": () => matchAnd(asList(expr.argumentList.arguments.first))
+    }[name];
+
+    if (e != null) {
+      return e();
+    }
+
+    print("Don't know how to evaluate ${name}");
+
+    return false;
+  }
+
+  asList(ListLiteral lit) => lit.elements;
+
+  bool matchAnd(NodeList args) {
+    return args.every((AstNode n) => n.accept(new ExpressionMatcherVisitor(mdecl)));
+  }
+
+  bool matchAnnnotation(Expression expr) {
+    if (expr is StringLiteral) {
+      String val = expr.stringValue;
+      print("Eval ExPR : ${val}");
+      RegExp re = new RegExp(val);
+      return mdecl.metadata.any((Annotation a) => re.hasMatch(a.name.name)) ;
+    }
+    return false;
+  }
+
+  bool evaluateRegExp(Expression expr) {
+    if (expr is StringLiteral) {
+      String val = expr.stringValue;
+      print("Eval ExPR : ${val}");
+      return new RegExp(val).hasMatch(mdecl.name.name);
+    }
+    return false;
+  }
+
+}
+
+class ExpressionMethodMatcher implements MethodMatcher {
+  Expression expression;
+
+  ExpressionMethodMatcher(this.expression);
+
+  bool matches(MethodDeclaration declaration) {
+    return expression.accept(new ExpressionMatcherVisitor(declaration));
+  }
+
+
 }
 
 abstract class PointcutInterceptor implements AstVisitor {
