@@ -1,11 +1,8 @@
 library aop.analyzer;
 
-import "dart:async";
-
 import "package:analyzer/analyzer.dart";
-import "package:aop/injector.dart";
+import "package:aop/src/injector.dart";
 import "package:logging/logging.dart";
-import "package:source_span/source_span.dart";
 
 Logger logger = new Logger("aop.injector");
 
@@ -19,21 +16,25 @@ class PointcutDeclaration {
   PointcutInterceptor createInterceptor() =>
       new MethodInterceptorPointcut()
         ..id = pointcutId
-        ..matcher = new ExpressionMethodMatcher(pointcutDefAnnotation.arguments.arguments.first);
+        ..matcher = new ExpressionMethodMatcher(
+            pointcutDefAnnotation.arguments.arguments.first);
 
 
   String get pointcutId => "${cdecl.name}.${mdecl.name}";
 
-  PointcutDeclaration({this.url,this.cdecl, this.mdecl, this.pointcutDefAnnotation});
+  PointcutDeclaration(
+      {this.url, this.cdecl, this.mdecl, this.pointcutDefAnnotation});
 
-  void buildPointcutRegister(StringBuffer buffer,String prefix) {
+  void buildPointcutRegister(StringBuffer buffer, String prefix) {
     buffer.write(" pointcutRegistry.register('");
     buffer.write(pointcutId);
-    buffer.write("',(context,proceed) => aspectRegistry.aspect(${prefix}.${cdecl.name}).${mdecl.name}(context,proceed) );\n");
+    buffer.write("',(context,proceed) => aspectRegistry.aspect(${prefix}.${cdecl
+        .name}).${mdecl.name}(context,proceed) );\n");
   }
 
-  void buildDefaultAopRegistry(StringBuffer buffer,String prefix) {
-    buffer.write(" aspectRegistry.registerAspect(${prefix}.${cdecl.name},() => new ${prefix}.${cdecl.name}());\n");
+  void buildDefaultAopRegistry(StringBuffer buffer, String prefix) {
+    buffer.write(" aspectRegistry.registerAspect(${prefix}.${cdecl
+        .name},() => new ${prefix}.${cdecl.name}());\n");
   }
 
 
@@ -46,7 +47,7 @@ class PointcutCollector extends RecursiveAstVisitor {
   List<PointcutDeclaration> poincutDeclarations;
   String url;
 
-  PointcutCollector(this.url,this.cdecl, this.poincutDeclarations);
+  PointcutCollector(this.url, this.cdecl, this.poincutDeclarations);
 
   visitMethodDeclaration(MethodDeclaration mdecl) {
     Iterable<Annotation> pointcutDefs = mdecl.metadata.where((
@@ -55,7 +56,7 @@ class PointcutCollector extends RecursiveAstVisitor {
       logger.fine("FOUND pointcut : ${mdecl.name.name} , ${pointcutDefAnnotation
           .arguments.arguments[0]}");
       poincutDeclarations.add(new PointcutDeclaration(
-          url:url,
+          url: url,
           pointcutDefAnnotation: pointcutDefAnnotation,
           cdecl: cdecl,
           mdecl: mdecl
@@ -69,13 +70,13 @@ class AspectCollector extends RecursiveAstVisitor {
   List<PointcutDeclaration> poincutDeclarations;
   String url;
 
-  AspectCollector(this.poincutDeclarations,this.url);
+  AspectCollector(this.poincutDeclarations, this.url);
 
   visitClassDeclaration(ClassDeclaration cdecl) {
     if (cdecl.metadata.any((Annotation anno) => anno.name.name == "aspect")) {
       logger.fine("FOUND ASPECT : ${cdecl.name.name} in ${url}");
 
-      cdecl.accept(new PointcutCollector(url,cdecl, poincutDeclarations));
+      cdecl.accept(new PointcutCollector(url, cdecl, poincutDeclarations));
     }
   }
 
@@ -105,7 +106,7 @@ class AnalyzerResult {
   List<PointcutDeclaration> pointcutDeclarations;
   String initializer;
 
-  AnalyzerResult(this.pointcutDeclarations,this.initializer);
+  AnalyzerResult(this.pointcutDeclarations, this.initializer);
 }
 
 class Analyzer {
@@ -116,10 +117,11 @@ class Analyzer {
     pointcutDeclarations = [];
   }
 
-  void analyze(String contents, String url)  {
-    CompilationUnit unit = parseCompilationUnit(contents,parseFunctionBodies: false);
+  void analyze(String contents, String url) {
+    CompilationUnit unit = parseCompilationUnit(
+        contents, parseFunctionBodies: false);
 
-    unit.accept(new AspectCollector(pointcutDeclarations,url));
+    unit.accept(new AspectCollector(pointcutDeclarations, url));
   }
 
   AnalyzerResult end() {
@@ -127,33 +129,33 @@ class Analyzer {
 
 
     buffer.write(
-        "import 'package:initialize/initialize.dart';\n"
-        "import 'package:aop/src/pointcut_registry.dart';\n"
-        "import 'package:aop/aop.dart';\n");
-    Map<String,String>  prefixes={};
+            "library aop.generated.initializer;\n"
+            "import 'package:initialize/initialize.dart';\n"
+            "import 'package:aop/src/pointcut_registry.dart';\n"
+            "import 'package:aop/aop.dart';\n");
+    Map<String, String> prefixes = {};
 
     pointcutDeclarations.forEach((PointcutDeclaration pd) {
-      prefixes.putIfAbsent(pd.url,() {
+      prefixes.putIfAbsent(pd.url, () {
         String prefix = "pd${prefixes.length}";
         buffer.write("import '${pd.url}' as ${prefix};\n");
         return prefix;
       });
-
     });
 
 
     buffer.write(
         "@initMethod\n"
-        "init_aop() {\n");
+            "init_aop() {\n");
     pointcutDeclarations.forEach((PointcutDeclaration pdecl) {
-      pdecl.buildPointcutRegister(buffer,prefixes[pdecl.url]);
-      pdecl.buildDefaultAopRegistry(buffer,prefixes[pdecl.url]);
+      pdecl.buildPointcutRegister(buffer, prefixes[pdecl.url]);
+      pdecl.buildDefaultAopRegistry(buffer, prefixes[pdecl.url]);
     });
 
     buffer.write("}\n");
 
 
-    return new AnalyzerResult(pointcutDeclarations,buffer.toString());
+    return new AnalyzerResult(pointcutDeclarations, buffer.toString());
   }
 
 }

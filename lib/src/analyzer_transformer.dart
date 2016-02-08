@@ -1,9 +1,9 @@
 library aop.analyzer_transformer;
 
 import "package:barback/barback.dart";
-import "package:aop/analyzer.dart";
+import "package:aop/src/analyzer.dart";
 
-AnalyzerResult analyzerResult;
+//AnalyzerResult analyzerResult;
 
 class AopAnalyzerTransformer extends AggregateTransformer {
 
@@ -19,7 +19,7 @@ class AopAnalyzerTransformer extends AggregateTransformer {
     analyzer.start();
 
     await for (Asset asset in transform.primaryInputs) {
-      print("Analyzing ${asset.id}");
+      logger.fine("Analyzing ${asset.id}");
 
       String content =  await asset.readAsString();
 
@@ -31,11 +31,13 @@ class AopAnalyzerTransformer extends AggregateTransformer {
       analyzer.analyze(content,"package:${asset.id.package}/${path}");
 
     }
-    analyzerResult = analyzer.end();
+    AnalyzerResult analyzerResult = analyzer.end();
 
     AssetId initId = new AssetId(transform.package,"web/aop_initializer.dart");
-    print("WRITE aopInitializer for: ${transform.package} : ${initId}");
+    logger.fine("WRITE aopInitializer for: ${transform.package} : ${initId}");
     transform.addOutput(new Asset.fromString(initId,analyzerResult.initializer));
+
+    settings.configuration["analyzer_result_holder"][0]=analyzerResult;
 
   }
 

@@ -10,7 +10,8 @@ dependencies:
     path: ..
 
 transformers:
- - aop
+ - aop:
+    entry_points: web/index.dart
 # - initialize:
 #    entry_points: web/index.dart
  - polymer:

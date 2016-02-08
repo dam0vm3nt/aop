@@ -24,6 +24,16 @@ class PointcutRegistry {
   PointcutRegistry._();
 }
 
+
+class AopWrappers {
+  static const String AOP_WRAPPER_METHOD_NAME = r"$aop$";
+
+  $aop$(InvokationContext context, Function f) {
+    return pointcutRegistry.executePointcuts(context, f);
+  }
+}
+
+
 final PointcutRegistry pointcutRegistry = new PointcutRegistry._();
 
 

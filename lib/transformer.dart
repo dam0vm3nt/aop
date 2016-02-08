@@ -8,13 +8,14 @@ class AopTransformer implements TransformerGroup {
   List<List<Transformer>> phases;
 
   AopTransformer.asPlugin(BarbackSettings settings) {
+    List  holder= new List(1);
 
     phases = [
       [
-        new AopAnalyzerTransformer.asPlugin(new BarbackSettings({},settings.mode))
+        new AopAnalyzerTransformer.asPlugin(new BarbackSettings({"analyzer_result_holder":holder},settings.mode))
       ],
       [
-        new AopInjectorTransformer.asPlugin(new BarbackSettings({},settings.mode))
+        new AopInjectorTransformer.asPlugin(new BarbackSettings({"analyzer_result_holder":holder,"entry_points":settings.configuration["entry_points"]},settings.mode))
       ]
     ];
   }

@@ -1,11 +1,13 @@
 library aop.test;
 
+import "package:aop/src/analyzer.dart";
 import 'package:aop/aop.dart';
-import "package:aop/injector.dart";
-import "package:aop/analyzer.dart";
+import "package:aop/src/injector.dart";
+import 'package:aop/src/pointcut_registry.dart';
 import "package:logging/logging.dart";
 import "package:resource/resource.dart" as res;
 import "package:test/test.dart";
+
 import 'sample_aspect.dart';
 
 part "sample_translated.dart";
@@ -100,7 +102,7 @@ void main() {
 
       String content = await x.readAsString();
 
-      String newContent = await injector.inject(content, u.toString(),true);
+      String newContent = injector.inject(content, u.toString(),true);
       print("TRANSORMED:\n${newContent}");
     });
   });

@@ -1,11 +1,10 @@
 library aop.injector_transformer;
 
-import "package:barback/barback.dart";
-import "package:aop/injector.dart";
-import "package:aop/src/analyzer_transformer.dart" show analyzerResult;
-import "package:aop/analyzer.dart" show PointcutDeclaration;
-
 import "dart:async";
+
+import "package:aop/src/analyzer.dart" show PointcutDeclaration,AnalyzerResult;
+import "package:aop/src/injector.dart";
+import "package:barback/barback.dart";
 
 class AopInjectorTransformer extends Transformer {
   final BarbackSettings settings;
@@ -21,6 +20,7 @@ class AopInjectorTransformer extends Transformer {
 
   @override
   apply(Transform transform) async {
+    AnalyzerResult analyzerResult = settings.configuration["analyzer_result_holder"][0];
     if (analyzerResult == null) {
       return;
     }
@@ -31,10 +31,20 @@ class AopInjectorTransformer extends Transformer {
 
 
     String content = await transform.primaryInput.readAsString();
+    var url = transform.primaryInput.id.path.startsWith('lib/')
+          ? 'package:${transform.primaryInput.id.package}/${transform.primaryInput.id.path.substring(4)}'
+          : transform.primaryInput.id.path;
 
-    String injected = await injector.inject(content,transform.primaryInput.id.path,transform.primaryInput.id.path=="web/index.dart");
+    String injected = injector.inject(content,url,settings.configuration["entry_points"].contains(transform.primaryInput.id.path));
 
-    transform.addOutput(new Asset.fromString(transform.primaryInput.id,injected));
+    Asset result;
+    if (injected!=null) {
+      print("TRANS: ${transform.primaryInput.id}");
+      result = new Asset.fromString(transform.primaryInput.id,injected);
+    } else {
+      result = transform.primaryInput;
+    }
+    transform.addOutput(result);
 
   }
 }

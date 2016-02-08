@@ -2,9 +2,10 @@ library demo_aop.demo;
 
 import 'package:polymer/init.dart';
 import 'package:polymer/polymer.dart';
-import "package:reflectable/reflectable.dart";
+import 'package:initialize/initialize.dart' show run;
 import "package:aop_demo/sample_comp.dart";
 import "dart:html";
+import "dart:async";
 //@MirrorsUsed(targets: const ['dart.io.HttpClient', 'dart.io.HttpException',
 //  'dart.io.File'])
 //import "dart:mirrors" show MirrorsUsed;
@@ -21,6 +22,8 @@ main() async {
   Logger.root.onRecord.listen((LogRecord rec) {
     print('${rec.level.name}: ${rec.time}: ${rec.loggerName} - ${rec.message}');
   });
+
+  await run();
 
   await initPolymer();
 }

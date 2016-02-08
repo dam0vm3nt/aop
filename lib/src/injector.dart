@@ -221,21 +221,13 @@ class MethodInterceptorPointcut extends PointcutInterceptor
   }
 }
 
-class AopWrappers {
-  static const String AOP_WRAPPER_METHOD_NAME = r"$aop$";
-
-  $aop$(InvokationContext context, Function f) {
-    return pointcutRegistry.executePointcuts(context, f);
-  }
-}
-
 class Injector {
   List<PointcutInterceptor> interceptors;
 
   /**
    * Take a file, analyze it, check the pointcuts and then inject the behavior.
    */
-  Future<String> inject(String contents, String url, bool isEntryPoint) async {
+  String inject(String contents, String url, bool isEntryPoint) {
     CompilationUnit unit = parseCompilationUnit(contents);
     SourceFile source = new SourceFile(contents, url: url);
     TextEditTransaction edit = new TextEditTransaction(contents, source);
@@ -249,7 +241,8 @@ class Injector {
     }
 
     if (edit.hasEdits) {
-      edit.edit(pos,pos,"\nimport 'package:aop/injector.dart' show AopWrappers;\n");
+      edit.edit(pos,pos,"\nimport 'package:aop/src/pointcut_registry.dart' show AopWrappers;\n"
+          "import 'package:aop/aop.dart' show InvokationContext;\n");
     }
 
     if (isEntryPoint) {
@@ -263,6 +256,6 @@ class Injector {
       return p.text;
     }
 
-    return contents;
+    return null;
   }
 }

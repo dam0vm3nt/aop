@@ -11,6 +11,7 @@ class MySample extends PolymerElement {
   @reflectable
   void doIt([_,__]) {
     Sample s = new Sample();
+    print("OK");
     s.methodA(100);
   }
 
