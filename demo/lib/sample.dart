@@ -5,7 +5,15 @@ class Pippo {
 
 const Pippo pippo = const Pippo();
 
-class Sample {
+class Super {
+
+}
+
+class Mixin {
+
+}
+
+class Sample extends Super with Mixin {
   void methodXYZ(String a, {ciccio}) {
     print(a);
   }

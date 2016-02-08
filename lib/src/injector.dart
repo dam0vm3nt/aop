@@ -171,8 +171,16 @@ class AopMixinInjector extends RecursiveAstVisitor {
 
     if (edit.hasEdits) {
 
-      edit.edit(classDecl.name.end, classDecl.name.end,
-          " extends Object with AopWrappers");
+      if (classDecl.extendsClause==null) {
+        edit.edit(classDecl.name.end,classDecl.name.end," extends AopWrappers ");
+      } else {
+        if (classDecl.withClause==null) {
+          edit.edit(classDecl.extendsClause.end,classDecl.extendsClause.end," with AopWrappers ");
+        }  else {
+          edit.edit(classDecl.withClause.withKeyword.end,classDecl.withClause.withKeyword.end," AopWrappers,");
+        }
+      }
+
     }
   }
 }
