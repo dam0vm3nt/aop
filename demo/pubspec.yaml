@@ -5,15 +5,12 @@ homepage: http://www.somewhere.yettobedecided.com
 version: 0.0.1
 dependencies:
   polymer: "^1.0.0-rc.15"
-  initialize: any
   aop:
     path: ..
 
 transformers:
  - aop:
     entry_points: web/index.dart
-# - initialize:
-#    entry_points: web/index.dart
  - polymer:
     entry_points: web/index.html
 
