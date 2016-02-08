@@ -8,14 +8,16 @@ import "package:logging/logging.dart";
 import "package:resource/resource.dart" as res;
 import "package:test/test.dart";
 
-import 'sample_aspect.dart';
+import 'sample_aspect.dart' as pd0;
 
 part "sample_translated.dart";
 
 class MyAopInitializer {
   void execute() {
-    pointcutRegistry.register('MySampleAspect.executeAround',(context,proceed) => aspectRegistry.aspect(MySampleAspect).executeAround(context,proceed) );
-    aspectRegistry.registerAspect(MySampleAspect,() => new MySampleAspect());
+    pointcutRegistry.register('MySampleAspect.executeAround',(context,proceed) => aspectRegistry.aspect(pd0.MySampleAspect).executeAround(context,proceed) );
+    aspectRegistry.registerAspect(pd0.MySampleAspect,() => new pd0.MySampleAspect());
+    pointcutRegistry.register('MySampleAspect.getUno',(context,proceed) => aspectRegistry.aspect(pd0.MySampleAspect).getUno(context,proceed) );
+    aspectRegistry.registerAspect(pd0.MySampleAspect,() => new pd0.MySampleAspect());
   }
 }
 
@@ -31,7 +33,7 @@ void main() {
       new MyAopInitializer().execute();
 
       pointcutRegistry
-        ..register("logger",(InvokationContext ctx,Function proceed) {
+        ..register("logger",(InvocationContext ctx,Function proceed) {
           print("LOGGER BEFORE ${ctx}");
           var res=proceed();
           print("LOGGER AFTER ${ctx}");
@@ -43,6 +45,8 @@ void main() {
       Sample s = new Sample();
       s.methodXYZ("Giulia");
       print(s.methodA(2));
+      s.uno=1;
+      print(s.uno);
     });
   });
 
@@ -64,7 +68,7 @@ void main() {
       AnalyzerResult newContent = analyzer.end();
       print("factory:\n${newContent.initializer}");
 
-      newContent.pointcutDeclarations[0].createInterceptor();
+      newContent.pointcutDeclarations[0].createInterceptors();
     });
   });
 
@@ -93,7 +97,7 @@ void main() {
             ..id = "logger"
             ..matcher = new SimpleMethodMatcher(name: new RegExp(".*"))
         ];
-      injector.interceptors.addAll(newContent.pointcutDeclarations.map((PointcutDeclaration pcdecl) => pcdecl.createInterceptor()));
+      injector.interceptors.addAll(newContent.pointcutDeclarations.fold([],(List b,PointcutDeclaration pcdecl) => b..addAll(pcdecl.createInterceptors())));
     });
 
     test("test1", () async {

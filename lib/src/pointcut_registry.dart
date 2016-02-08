@@ -1,11 +1,11 @@
 import "package:aop/aop.dart";
 
-typedef PointcutHandler(InvokationContext ctx, Function proceed);
+typedef PointcutHandler(InvocationContext ctx, Function proceed);
 
 class PointcutRegistry {
   Map<String, PointcutHandler> _handlersById = {};
 
-  executePointcuts(InvokationContext ctx, Function closure) {
+  executePointcuts(InvocationContext ctx, Function closure) {
     // TODO : replace with a list of pointcutsID
 
     PointcutHandler handler = _handlersById[ctx.pointcutId];
@@ -28,7 +28,7 @@ class PointcutRegistry {
 class AopWrappers {
   static const String AOP_WRAPPER_METHOD_NAME = r"$aop$";
 
-  $aop$(InvokationContext context, Function f) {
+  $aop$(InvocationContext context, Function f) {
     return pointcutRegistry.executePointcuts(context, f);
   }
 }

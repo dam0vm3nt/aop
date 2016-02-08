@@ -35,6 +35,13 @@ class Not extends MatchExpression {
   const Not(this.expression);
 }
 
+class IsGetter extends MatchExpression {
+  const IsGetter();
+}
+
+class IsSetter extends MatchExpression {
+  const IsSetter();
+}
 
 
 class Pointcut {
@@ -49,13 +56,16 @@ class Aspect {
 
 const Aspect aspect = const Aspect();
 
-class InvokationContext {
+class InvocationContext {
   String pointcutId;
+  var target;
   String methodName;
   List positionalParameters;
   Map<String, dynamic> namedParameters;
-  InvokationContext(this.pointcutId, this.methodName, this.positionalParameters,
-      this.namedParameters);
+  bool getter;
+  bool setter;
+  InvocationContext(this.pointcutId,this.target, this.methodName, this.positionalParameters,
+      this.namedParameters,{this.getter:false,this.setter:false});
 
   String toString() => "PoincutID:$pointcutId, Method:${methodName}";
 }

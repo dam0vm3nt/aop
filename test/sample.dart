@@ -20,4 +20,7 @@ class Sample {
   }
 
   methodExpr(a,b) => a-b;
+
+  @pippo
+  int uno;
 }

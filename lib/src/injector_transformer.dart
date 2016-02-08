@@ -27,7 +27,8 @@ class AopInjectorTransformer extends Transformer {
     //print("INJECTING IN ${transform.primaryInput.id}");
     injector = new Injector();
 
-    injector.interceptors = analyzerResult.pointcutDeclarations.map((PointcutDeclaration pcdecl) => pcdecl.createInterceptor());
+    injector.interceptors = analyzerResult.pointcutDeclarations.fold([],(List<PointcutInterceptor> bag,PointcutDeclaration pcdecl) => bag
+      ..addAll(pcdecl.createInterceptors()));
 
 
     String content = await transform.primaryInput.readAsString();

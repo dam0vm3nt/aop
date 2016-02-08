@@ -17,7 +17,7 @@ Declare your aspect anywhere in your code, for example:
     class MySampleAspect {
     
      @Pointcut(const AnnotationMatches("pippo"))
-     executeAround(InvokationContext context, Function proceed) {
+     executeAround(InvocationContext context, Function proceed) {
       print("BEFORE (myAspect)");
       var res = proceed();
       print("AFTER (myAspect)");
@@ -37,9 +37,26 @@ At the moment the expression is limited to:
 
  - `NameMatches` to match the method name (using a regexp)
  - `AnnotationMatches` to match an annotation of the method
+ - `IsGetter` / `IsSetter` to check if the method is a getter or setter
  - `And`, `Or`, `Not` try to guess ?
 
 Also you can only write `around` pointcut for method.
+Using `IsGetter` or `IsSetter` on a property will cause the pointcut to be called for both read and write operation on that property.
+The `InvocationContext` will have a `getter` or `setter` property set to `true` to distinguish the one from the other.
+
+For example `aop` can be used to automatically call `set`  method on a `polymer` 1.0 component:
+
+     @aspect
+    class AutoSetter {
+      @Pointcut(const And(const [const AnnotationMatches("property"), const IsGetter()]))
+      callSetter(InvocationContext context, Function proceed) {
+        if(context.setter) {
+          (context.target as PolymerElement).set(
+              context.methodName, context.positionalParameters[0]);
+          //context.target.set()
+        }
+      }
+    }
  
 ## the transformer
 

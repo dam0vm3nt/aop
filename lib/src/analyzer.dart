@@ -7,17 +7,50 @@ import "package:logging/logging.dart";
 Logger logger = new Logger("aop.injector");
 
 
+class IsGetterOrSetterVisitor extends GeneralizingAstVisitor<bool> {
+
+  bool isGetter = false;
+  bool isSetter = false;
+
+  visitInstanceCreationExpression(InstanceCreationExpression e) {
+    if (e.isConst && e.constructorName.toString() == "IsGetter") {
+      isGetter = true;
+    }
+    if (e.isConst && e.constructorName.toString() == "IsSetter") {
+      isSetter = true;
+    }
+    super.visitInstanceCreationExpression(e);
+  }
+}
+
 class PointcutDeclaration {
   ClassDeclaration cdecl;
   MethodDeclaration mdecl;
   Annotation pointcutDefAnnotation;
   String url;
 
-  PointcutInterceptor createInterceptor() =>
+  List<PointcutInterceptor> createInterceptors() {
+    IsGetterOrSetterVisitor v = new IsGetterOrSetterVisitor();
+    pointcutDefAnnotation.arguments.arguments.first.accept(v);
+
+
+    List<PointcutInterceptor> res = [
+
+
       new MethodInterceptorPointcut()
         ..id = pointcutId
         ..matcher = new ExpressionMethodMatcher(
-            pointcutDefAnnotation.arguments.arguments.first);
+            pointcutDefAnnotation.arguments.arguments.first)
+    ];
+
+    if (v.isGetter||v.isSetter) {
+      res.add(new GetterSetterInterceptorPointcut()
+          ..id=pointcutId
+          ..matcher = new ExpressionFieldMatcher(pointcutDefAnnotation.arguments.arguments.first));
+    }
+
+    return res;
+  }
 
 
   String get pointcutId => "${cdecl.name}.${mdecl.name}";
@@ -129,7 +162,7 @@ class Analyzer {
 
 
     buffer.write(
-            "library aop.generated.initializer;\n"
+        "library aop.generated.initializer;\n"
             "import 'package:initialize/initialize.dart';\n"
             "import 'package:aop/src/pointcut_registry.dart';\n"
             "import 'package:aop/aop.dart';\n");

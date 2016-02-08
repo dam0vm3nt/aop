@@ -9,10 +9,20 @@ class MySampleAspect {
     ]),
     const Not(const NameMatches(r"XYZ"))
   ]))
-  executeAround(InvokationContext context, Function proceed) {
+  executeAround(InvocationContext context, Function proceed) {
     print("BEFORE (myAspect)");
     var res = proceed();
     print("AFTER (myAspect)");
     return res;
+  }
+
+  @Pointcut(const And(const [const AnnotationMatches("pippo"),const IsGetter()]))
+  void getUno(InvocationContext context,Function proceed) {
+    if (context.getter) {
+      print("GETTING UNO FROM : ${context.target}");
+    }
+    if (context.setter) {
+      print("SETTING UNO : ${context.positionalParameters[0]}");
+    }
   }
 }

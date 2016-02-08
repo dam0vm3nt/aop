@@ -2,7 +2,7 @@ name: aop
 author: vittorio ballestra <vittorio.ballestra@gmail.com>
 description: aop framework for dart - aka, the final transformer
 homepage: https://github.com/dam0vm3nt/aop
-version: 0.9.0+1
+version: 0.9.1
 
 dev_dependencies:
   analyzer: '>=0.27.1 <0.28.0'

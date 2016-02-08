@@ -1,4 +1,6 @@
 
+import "package:polymer/polymer.dart";
+
 class Pippo {
   const Pippo();
 }
@@ -28,4 +30,6 @@ class Sample extends Super with Mixin {
   }
 
   methodExpr(a,b) => a-b;
+
+  @property int x;
 }
